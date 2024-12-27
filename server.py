@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from typing import Dict
 import argparse
 
-from file_utils import generate_proxy_extension
+from file_utils import generate_proxy_extension, del_user_data_dir
 
 # Check if running in Docker mode
 DOCKER_MODE = os.getenv("DOCKERMODE", "false").lower() == "true"
@@ -58,7 +58,7 @@ def is_safe_url(url: str) -> bool:
 
 
 # Function to bypass Cloudflare protection
-def bypass_cloudflare(url: str, proxy: str, retries: int, log: bool) -> ChromiumPage:
+def bypass_cloudflare(url: str, proxy: str, user_data_dir: str, retries: int, log: bool) -> ChromiumPage:
     from pyvirtualdisplay import Display
 
     if DOCKER_MODE:
@@ -73,13 +73,12 @@ def bypass_cloudflare(url: str, proxy: str, retries: int, log: bool) -> Chromium
         options.set_argument("--disable-gpu")  # Optional, helps in some cases
         options.set_paths(browser_path=browser_path).headless(False)
     else:
-        user_data_dir = uuid.uuid4()
         options = ChromiumOptions()
         options.set_argument("--auto-open-devtools-for-tabs", "true")
         options.set_paths(browser_path=browser_path).headless(False)
         options.set_argument(f"--user-data-dir={user_data_dir}")
         if proxy:
-            extension_path = generate_proxy_extension(proxy)
+            extension_path = generate_proxy_extension(proxy, user_data_dir)
             options.add_extension(extension_path)
 
     driver = ChromiumPage(addr_or_opts=options)
@@ -101,10 +100,12 @@ async def get_cookies(url: str, proxy: str = None, retries: int = 5):
     if not is_safe_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
     try:
-        driver = bypass_cloudflare(url, proxy, retries, log)
+        user_data_dir = str(uuid.uuid4())
+        driver = bypass_cloudflare(url, proxy, user_data_dir, retries, log)
         cookies = driver.cookies(as_dict=True)
         user_agent = driver.user_agent
         driver.quit()
+        del_user_data_dir(user_data_dir)
         return CookieResponse(cookies=cookies, user_agent=user_agent)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -116,7 +117,8 @@ async def get_html(url: str, proxy: str = None, retries: int = 5):
     if not is_safe_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
     try:
-        driver = bypass_cloudflare(url, proxy, retries, log)
+        user_data_dir = str(uuid.uuid4())
+        driver = bypass_cloudflare(url, proxy, user_data_dir, retries, log)
         html = driver.html
         cookies_json = json.dumps(driver.cookies(as_dict=True))
 
@@ -124,6 +126,7 @@ async def get_html(url: str, proxy: str = None, retries: int = 5):
         response.headers["cookies"] = cookies_json
         response.headers["user_agent"] = driver.user_agent
         driver.quit()
+        del_user_data_dir(user_data_dir)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

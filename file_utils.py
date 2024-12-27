@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+import time
 import zipfile
 
 # Chrome代理模板插件(https://github.com/RobinDev/Selenium-Chrome-HTTP-Private-Proxy)目录
@@ -10,22 +11,22 @@ PROXY_HELPER = 'Chrome-proxy-helper'
 CUSTOM_CHROME_PROXY_EXTENSIONS_DIR = 'chrome-proxy-extensions'
 
 
-def generate_proxy_extension(proxy):
+def generate_proxy_extension(proxy, user_data_dir):
     """获取一个Chrome代理扩展,里面配置有指定的代理(带用户名密码认证)
     proxy - 指定的代理,格式: username:password@ip:port
     """
     new_proxy = proxy.replace('http://', '').replace('https://', '')
     # extension_file_path = generate_extension_zip(new_proxy)  # 生成插件的zip文件
-    extension_file_path = generate_extension_dir(new_proxy)  # 生成插件的目录
+    extension_file_path = generate_extension_dir(new_proxy, user_data_dir)  # 生成插件的目录
     return extension_file_path
 
 
 # 生成插件的zip文件
-def generate_extension_dir(proxy):
+def generate_extension_dir(proxy, user_data_dir):
     ip, port, username, password = format_proxy(proxy)
     print(ip, port, username, password)
     # 创建一个定制Chrome代理扩展
-    custom_chrome_proxy_extensions_dir = os.path.join(os.getcwd(), CUSTOM_CHROME_PROXY_EXTENSIONS_DIR)
+    custom_chrome_proxy_extensions_dir = os.path.join(os.getcwd(), user_data_dir)
     extension_file_path = os.path.join(custom_chrome_proxy_extensions_dir, proxy.replace(':', '_'))
     os.makedirs(extension_file_path, exist_ok=True)
 
@@ -96,3 +97,9 @@ def format_proxy(proxy):
         raise Exception('Invalid proxy format. Should be username:password@ip:port')
     ip, port, username, password = split_arr
     return ip, port, username, password
+
+
+def del_user_data_dir(user_data_dir):
+    custom_chrome_proxy_extensions_dir = os.path.join(os.getcwd(), user_data_dir)
+    if os.path.exists(custom_chrome_proxy_extensions_dir):
+        shutil.rmtree(custom_chrome_proxy_extensions_dir)
