@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing import Dict
 import argparse
 
+from base64_utils import check_base64_string
 from file_utils import generate_proxy_extension, del_user_data_dir
 
 #pyinstaller --onefile --add-data "Chrome-proxy-helper;Chrome-proxy-helper" server.py
@@ -133,23 +134,26 @@ async def get_html(url: str, proxy: str = None, retries: int = 5):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+SERVER_PORT = 12306
 # Main entry point
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cloudflare bypass api")
 
     parser.add_argument("--nolog", action="store_true", help="Disable logging")
     parser.add_argument("--headless", action="store_true", help="Run in headless mode")
+    parser.add_argument("--hash", help="Run in hash param")
 
     args = parser.parse_args()
-    if args.headless and not DOCKER_MODE:
-        from pyvirtualdisplay import Display
+    if args.hash and check_base64_string(args.hash, str(SERVER_PORT), 10 * 1000):
+        if args.headless and not DOCKER_MODE:
+            from pyvirtualdisplay import Display
 
-        display = Display(visible=0, size=(1920, 1080))
-        display.start()
-    if args.nolog:
-        log = False
-    else:
-        log = True
-    import uvicorn
+            display = Display(visible=0, size=(1920, 1080))
+            display.start()
+        if args.nolog:
+            log = False
+        else:
+            log = True
+        import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=12306)
+        uvicorn.run(app, host="0.0.0.0", port=SERVER_PORT)
