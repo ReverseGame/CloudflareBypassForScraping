@@ -13,6 +13,7 @@ import argparse
 
 from file_utils import generate_proxy_extension, del_user_data_dir
 
+#pyinstaller --onefile --add-data "Chrome-proxy-helper;Chrome-proxy-helper" server.py
 # Check if running in Docker mode
 DOCKER_MODE = os.getenv("DOCKERMODE", "false").lower() == "true"
 
