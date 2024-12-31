@@ -76,17 +76,17 @@ async def bypass_cloudflare(url: str, proxy: str, user_data_dir: str, retries: i
         options.set_paths(browser_path=browser_path).headless(False)
     else:
         options = ChromiumOptions()
-        options.set_argument("--auto-open-devtools-for-tabs", "true")
+        # options.set_argument("--auto-open-devtools-for-tabs", "true")
         options.set_paths(browser_path=browser_path).headless(False)
         options.set_argument(f"--user-data-dir={user_data_dir}")
-        options.set_argument(f"--window-size=600,600")
+        options.set_argument(f"--window-size=800,600")
         options.set_argument(f"--disable-timeouts-for-profiling")
-        options.set_argument("--remote-debugging-port=0")
+        options.auto_port()
         if proxy:
             extension_path = generate_proxy_extension(proxy, user_data_dir)
             options.add_extension(extension_path)
 
-    driver = ChromiumPage(addr_or_opts=options)
+    driver = ChromiumPage(addr_or_opts=options, timeout=30)
     try:
         driver.get(url, timeout=10)
         cf_bypasser = CloudflareBypasser(driver, retries, log)
