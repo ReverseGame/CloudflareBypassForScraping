@@ -100,6 +100,9 @@ def format_proxy(proxy):
 
 
 def del_user_data_dir(user_data_dir):
-    custom_chrome_proxy_extensions_dir = os.path.join(os.getcwd(), user_data_dir)
-    if os.path.exists(custom_chrome_proxy_extensions_dir):
-        shutil.rmtree(custom_chrome_proxy_extensions_dir)
+    try:
+        custom_chrome_proxy_extensions_dir = os.path.join(os.getcwd(), user_data_dir)
+        if os.path.exists(custom_chrome_proxy_extensions_dir):
+            shutil.rmtree(custom_chrome_proxy_extensions_dir)
+    except PermissionError as e:
+        print('')

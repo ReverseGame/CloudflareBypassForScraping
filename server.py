@@ -60,7 +60,7 @@ def is_safe_url(url: str) -> bool:
 
 
 # Function to bypass Cloudflare protection
-def bypass_cloudflare(url: str, proxy: str, user_data_dir: str, retries: int, log: bool) -> ChromiumPage:
+async def bypass_cloudflare(url: str, proxy: str, user_data_dir: str, retries: int, log: bool) -> ChromiumPage:
     from pyvirtualdisplay import Display
 
     if DOCKER_MODE:
@@ -79,13 +79,16 @@ def bypass_cloudflare(url: str, proxy: str, user_data_dir: str, retries: int, lo
         options.set_argument("--auto-open-devtools-for-tabs", "true")
         options.set_paths(browser_path=browser_path).headless(False)
         options.set_argument(f"--user-data-dir={user_data_dir}")
+        options.set_argument(f"--window-size=600,600")
+        options.set_argument(f"--disable-timeouts-for-profiling")
+        options.set_argument("--remote-debugging-port=0")
         if proxy:
             extension_path = generate_proxy_extension(proxy, user_data_dir)
             options.add_extension(extension_path)
 
     driver = ChromiumPage(addr_or_opts=options)
     try:
-        driver.get(url)
+        driver.get(url, timeout=10)
         cf_bypasser = CloudflareBypasser(driver, retries, log)
         cf_bypasser.bypass()
         return driver
@@ -103,7 +106,7 @@ async def get_cookies(url: str, proxy: str = None, retries: int = 5):
         raise HTTPException(status_code=400, detail="Invalid URL")
     try:
         user_data_dir = str(uuid.uuid4())
-        driver = bypass_cloudflare(url, proxy, user_data_dir, retries, log)
+        driver = await bypass_cloudflare(url, proxy, user_data_dir, retries, log)
         cookies = driver.cookies(as_dict=True)
         user_agent = driver.user_agent
         driver.quit()
