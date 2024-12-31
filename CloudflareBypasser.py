@@ -1,4 +1,4 @@
-import time
+import asyncio
 from DrissionPage import ChromiumPage
 
 class CloudflareBypasser:
@@ -76,7 +76,7 @@ class CloudflareBypasser:
             self.log_message(f"Error checking page title: {e}")
             return False
 
-    def bypass(self):
+    async def bypass(self):
         
         try_count = 0
 
@@ -89,7 +89,7 @@ class CloudflareBypasser:
             self.click_verification_button()
 
             try_count += 1
-            time.sleep(2)
+            await asyncio.sleep(2)
 
         if self.is_bypassed():
             self.log_message("Bypass successful.")

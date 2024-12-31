@@ -13,6 +13,7 @@ import argparse
 
 from base64_utils import check_base64_string
 from file_utils import generate_proxy_extension, del_user_data_dir
+from multiprocessing import freeze_support
 
 #pyinstaller --onefile --add-data "Chrome-proxy-helper;Chrome-proxy-helper" server.py
 # Check if running in Docker mode
@@ -40,7 +41,7 @@ arguments = [
 browser_path = "/usr/bin/google-chrome"
 app = FastAPI()
 
-
+log = False
 # Pydantic model for the response
 class CookieResponse(BaseModel):
     cookies: Dict[str, str]
@@ -90,7 +91,7 @@ async def bypass_cloudflare(url: str, proxy: str, user_data_dir: str, retries: i
     try:
         driver.get(url, timeout=10)
         cf_bypasser = CloudflareBypasser(driver, retries, log)
-        cf_bypasser.bypass()
+        await cf_bypasser.bypass()
         return driver
     except Exception as e:
         driver.quit()
@@ -140,23 +141,16 @@ async def get_html(url: str, proxy: str = None, retries: int = 5):
 SERVER_PORT = 12306
 # Main entry point
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Cloudflare bypass api")
-
-    parser.add_argument("--nolog", action="store_true", help="Disable logging")
-    parser.add_argument("--headless", action="store_true", help="Run in headless mode")
-    parser.add_argument("--hash", help="Run in hash param")
-
-    args = parser.parse_args()
-    if args.hash and check_base64_string(args.hash, str(SERVER_PORT), 10 * 1000):
-        if args.headless and not DOCKER_MODE:
-            from pyvirtualdisplay import Display
-
-            display = Display(visible=0, size=(1920, 1080))
-            display.start()
-        if args.nolog:
-            log = False
-        else:
-            log = True
-        import uvicorn
-
-        uvicorn.run(app, host="0.0.0.0", port=SERVER_PORT)
+    # if len(sys.argv) < 2:
+    #     print("Usage: python server.py [hash]")
+    # else:
+    #     hash = sys.argv[1]
+    #     print(f"Server started on port {SERVER_PORT} with hash {}")
+    #     if hash and check_base64_string(hash, str(SERVER_PORT), 10 * 100000000000000):
+    freeze_support()  # 添加这一行
+    import uvicorn
+    # if args.headless and not DOCKER_MODE:
+    #     from pyvirtualdisplay import Display
+    #     display = Display(visible=0, size=(1920, 1080))
+    #     display.start()
+    uvicorn.run("server:app", host="0.0.0.0", port=SERVER_PORT, workers=5)

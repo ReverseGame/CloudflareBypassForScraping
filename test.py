@@ -29,7 +29,7 @@ def get_chromium_options(browser_path: str, arguments: list) -> ChromiumOptions:
         options.set_argument(argument)
     return options
 
-def main():
+async def main():
     # Chromium Browser Path
     isHeadless = os.getenv('HEADLESS', 'false').lower() == 'true'
     
@@ -76,7 +76,7 @@ def main():
         # If you are solving an in-page captcha (like the one here: https://seleniumbase.io/apps/turnstile), use cf_bypasser.click_verification_button() directly instead of cf_bypasser.bypass().
         # It will automatically locate the button and click it. Do your own check if needed.
 
-        cf_bypasser.bypass()
+        await cf_bypasser.bypass()
 
         logging.info("Enjoy the content!")
         logging.info("Title of the page: %s", driver.title)
@@ -91,5 +91,5 @@ def main():
         if isHeadless:
             display.stop()
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
